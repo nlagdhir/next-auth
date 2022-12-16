@@ -1,10 +1,37 @@
-import React, { useRef, useState } from "react";
-import SimpleReactValidator from 'simple-react-validator';
+import React, { useRef, useState, useEffect } from "react";
+import SimpleReactValidator from "simple-react-validator";
 import BGImage from "../../public/assets/img/bg.jpg";
+
+const createUser = async ({ username, email, password }) => {
+  const response = await fetch("/api/auth/signup", {
+    method: "POST",
+    body: JSON.stringify({
+      username: username,
+      email: email,
+      password: password,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if(!response.ok) {
+    return new Error(data.message || 'Something went wrong!');
+  }
+
+
+
+  return data;
+
+};
 
 function AuthForm() {
   const simpleValidator = useRef(new SimpleReactValidator());
   const [isLogin, setIsLogin] = useState(true);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [activeNotification, setActiveNotification] = useState(false);
   const [, forceUpdate] = useState();
   const [userInput, setUserInput] = useState([
     (username) => "",
@@ -12,24 +39,50 @@ function AuthForm() {
     (password) => "",
   ]);
 
-  const handleAuthFormSubmit = (event) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+    },3000)
+  
+    clearTimeout(timer);
+  }, [activeNotification])
+  
+
+  const handleAuthFormSubmit = async (event) => {
     event.preventDefault();
 
-    const formValid = simpleValidator.current.allValid();
-    console.log('saving...')
-    if (!formValid) {
-      console.log('form not valid...')
-      simpleValidator.current.showMessages()
-      forceUpdate(1);
-    }
+    // Validate form field validity
 
+    const formValid = simpleValidator.current.allValid();
+    console.log("saving...");
+    if (!formValid) {
+      console.log("form not valid...");
+      simpleValidator.current.showMessages();
+      forceUpdate(1);
+    } else {
+      console.log(userInput);
+
+      // api call using function createUser()
+      try{
+        const result = await createUser(userInput);
+        setSuccessMessage(result.message);
+        setActiveNotification(true);
+        console.log(result.message);
+      }catch(err){ 
+        console.log(err);
+      }
+      
+      
+
+      // log user data
+    }
   };
 
   const handleFormTypeChange = () => {
     setIsLogin((prevValue) => !prevValue);
-    simpleValidator.current.hideMessages()
+    // simpleValidator.current.hideMessages()
     forceUpdate(1);
-  }
+  };
 
   const handleUserInputChange = (e) => {
     setUserInput({ ...userInput, [e.target.name]: e.target.value });
@@ -60,6 +113,7 @@ function AuthForm() {
                 <div className="col-lg-6 bg-white">
                   <div className="d-flex align-items-center px-4 px-lg-5 h-100">
                     <form className="login-form py-5 w-100">
+                      {successMessage && <p className="success-message">{successMessage}</p>}
                       <div className="input-material-group mb-3">
                         <label className="label" htmlFor="login-username">
                           User Name :
@@ -74,14 +128,15 @@ function AuthForm() {
                           autoComplete="off"
                           data-validate-field="username"
                         />
-                        {simpleValidator.current.message('username', userInput.username, 'required')}
+                        {simpleValidator.current.message(
+                          "username",
+                          userInput.username,
+                          "required"
+                        )}
                       </div>
                       {!isLogin && (
                         <div className="input-material-group mb-3">
-                          <label
-                            className="label"
-                            htmlFor="login-email"
-                          >
+                          <label className="label" htmlFor="login-email">
                             Email :
                           </label>
                           <input
@@ -94,28 +149,32 @@ function AuthForm() {
                             autoComplete="off"
                             data-validate-field="email"
                           />
-                          {simpleValidator.current.message('email', userInput.email, 'required|email')}
-                          
+                          {simpleValidator.current.message(
+                            "email",
+                            userInput.email,
+                            "required|email"
+                          )}
                         </div>
                       )}
 
                       <div className="input-material-group mb-4">
-                      <label
-                          className="label"
-                          htmlFor="login-password"
-                        >
+                        <label className="label" htmlFor="login-password">
                           Password :
                         </label>
                         <input
                           onChange={(e) => handleUserInputChange(e)}
                           value={userInput.password}
-                          className="input-material"
+                          className="input-material" 
                           id="login-password"
                           type="password"
                           name="password"
                           data-validate-field="password"
                         />
-                        {simpleValidator.current.message('password', userInput.password, 'required|min:8|max:20')}
+                        {simpleValidator.current.message( 
+                          "password",
+                          userInput.password,
+                          "required|min:8|max:20"
+                        )}
                       </div>
                       <button
                         onClick={(e) => handleAuthFormSubmit(e)}
