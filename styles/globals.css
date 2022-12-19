@@ -16187,5 +16187,8 @@ STYLE SWITCHER FOR DEMO
 }
 
 .srv-validation-message { color:#f64747}
+.success-message {    color: #057f05;
+  background: #b5e9b5;  
+  padding: 10px;}
 
 .link { background: none; border: none }
