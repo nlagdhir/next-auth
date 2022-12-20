@@ -59,6 +59,7 @@ function AuthForm() {
       console.log("form not valid...");
       simpleValidator.current.showMessages();
       forceUpdate(1);
+      return ;
     }
 
     if (isLogin) {
